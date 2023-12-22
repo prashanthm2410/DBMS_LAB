@@ -1,0 +1,115 @@
+Sailors database
+1) SAILORS (sid, sname, rating, age)
+2) BOAT(bid, bname, color)
+3) RSERVERS (sid, bid, date)
+
+CREATE DATABASE SAILORS;
+
+USE SAILORS;
+
+CREATE TABLE SAILOR(SID PRIMARY KEY, SNAME VARCHAR(20), RATING FLOAT,AGE INT);
+
+CREATE TABLE BOAT(BID INT PRIMARY KEY, BNAME VARCHAR(20), COLOR VARCHAR(10));
+
+CREATE TABLE RSERVERS(SID INT, BID INT, DATE DATE,FOREIGN KEY(SID) REFERENCES SAILOR(SID),FOREIGN KEY(BID)  REFERENCES BOAT(BID));
+
+INSERT INTO SAILOR (sid, sname, rating, age) VALUES
+    -> (1, 'John Smith', 8, 25),
+    -> (2, 'Jane Doe', 6, 28),
+    -> (3, 'Bob Johnson', 7, 22),
+    -> (4, 'Emily White', 9, 30),
+    -> (5, 'Alex Brown', 5, 26);
+
+INSERT INTO BOAT (bid, bname, color) VALUES
+    -> (101, 'Sailboat 1', 'Blue'),
+    -> (102, 'Speedboat 1', 'Red'),
+    -> (103, 'Yacht 1', 'White'),
+    -> (104, 'Canoe 1', 'Green'),
+    -> (105, 'Fishing Boat 1', 'Yellow');
+
+INSERT INTO RESERVERS (sid, bid, date) VALUES
+    -> (1, 101, '2023-01-15'),
+    -> (2, 103, '2023-02-10'),
+    -> (3, 102, '2023-03-20'),
+    -> (4, 104, '2023-04-05'),
+    -> (5, 105, '2023-05-12');
+
+1)
+SELECT COLOR FROM BOAT WHERE BID =(SELECT BID FROM RSERVERS WHERE SID=  (SELECT SID FROM SAILOR WHERE SNAME = "ALEX BROWN"));
+
+2)
+SELECT SID FROM SAILOR WHERE RATING>8 OR SID=(SELECT SID FROM RSERVERS WHERE BID = 103);
+
+3)
+SELECT SNAME 
+    -> FROM SAILOR 
+    -> WHERE SID NOT IN (
+    ->     SELECT SID 
+    ->     FROM RSERVERS 
+    ->     WHERE BID IN (
+    ->         SELECT BID 
+    ->         FROM BOAT 
+    ->         WHERE BNAME LIKE '%storm%'
+    ->     )
+    -> );
+
+4)
+SELECT DISTINCT S.sname FROM 
+SAILOR S WHERE NOT EXISTS (
+	SELECT B.bid FROM BOAT B
+   		 WHERE NOT EXISTS (        
+	 		SELECT R.bid FROM RSERVERS R   
+				WHERE R.sid = S.sid AND R.bid = B.bid ) );
+
+5)
+SELECT SNAME, AGE FROM SAILOR WHERE AGE = (SELECT MAX(AGE) FROM SAILOR );
+
+6)
+SELECT R.bid AS boat_id, AVG(S.age) AS average_age 
+FROM RSERVERS 
+R JOIN SAILOR S ON 
+R.sid = S.sid WHERE S.age >= 20 
+GROUP BY R.bid 
+HAVING COUNT(DISTINCT R.sid) >= 2;
+
+7)
+CREATE VIEW SAILORVIEW AS
+SELECT BOAT.BNAME, BOAT.COLOR
+FROM BOAT
+JOIN RSERVERS ON BOAT.BID = RSERVERS.BID
+WHERE RSERVERS.SID IN (SELECT SID FROM SAILOR WHERE RATING = 9);
+
+8)
+DELIMITER //
+CREATE TRIGGER BDELETE
+BEFORE DELETE ON BOAT
+FOR EACH ROW
+BEGIN
+    IF EXISTS (SELECT BID FROM RSERVERS WHERE BID = OLD.BID) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'CANNOT DELETE';
+    END IF;
+END;
+//
+DELIMITER ;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

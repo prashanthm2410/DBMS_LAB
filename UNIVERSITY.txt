@@ -1,0 +1,110 @@
+CREATE DATABASE UNIVERSITY;
+
+USE UNIVERSITY;
+
+CREATE TABLE STUDENT (REGNO VARCHAR(20) PRIMARY KEY, NAME VARCHAR(20), MAJOR VARCHAR(20), BDATE DATE);
+
+CREATE TABLE COURSE(CID INT PRIMARY KEY, CNAME VARCHAR(20), DEPT VARCHAR(20));
+
+CREATE TABLE ENROLL (REGNO VARCHAR(20), CID INT, SEM INT, MARKS INT, FOREIGN KEY (CID) REFERENCES COURSE(CID));
+
+CREATE TABLE TEXT (BOOKISBN INT PRIMARY KEY, TITLE VARCHAR(20), PUBLISHER VARCHAR(30), AUTHOR VARCHAR(30));
+
+CREATE TABLE BOOKADOP ( CID INT , SEM INT, BOOKISBN INT, FOREIGN KEY (CID) REFERENCES COURSE(CID), FOREIGN KEY (BOOKISBN) REFERENCES TEXT(BOOKISBN));
+
+
+-- Inserting into STUDENT table
+INSERT INTO STUDENT (REGNO, NAME, MAJOR, BDATE) VALUES
+('S001', 'John Doe', 'Computer Science', '1995-05-10'),
+('S002', 'Jane Smith', 'Mathematics', '1994-08-22'),
+('S003', 'Bob Johnson', 'Physics', '1996-02-15'),
+('S004', 'Alice Brown', 'Chemistry', '1997-11-30'),
+('S005', 'Charlie Wilson', 'Biology', '1998-06-18');
+
+-- Inserting into COURSE table
+INSERT INTO COURSE (CID, CNAME, DEPT) VALUES
+(101, 'Programming', 'Computer Science'),
+(102, 'Linear Algebra', 'Mathematics'),
+(103, 'Mechanics', 'Physics'),
+(104, 'Chemistry', 'Chemistry'),
+(105, 'Genetics', 'Biology');
+
+-- Inserting into ENROLL table
+INSERT INTO ENROLL (REGNO, CID, SEM, MARKS) VALUES
+('S001', 101, 1, 90),
+('S002', 102, 2, 85),
+('S003', 103, 1, 88),
+('S004', 104, 2, 78),
+('S005', 105, 1, 92);
+
+-- Inserting into TEXT table
+INSERT INTO TEXT (BOOKISBN, TITLE, PUBLISHER, AUTHOR) VALUES
+(1001, 'Programming', 'Tech Books', 'John Programmer'),
+(1002, 'Linear Algebra', 'Math Publishers', 'Alice Mathematician'),
+(1003, 'Quantum Mechanics', 'Physics Press', 'Bob Physicist'),
+(1004, 'Organic Chemistry', 'Chemical Books', 'Carol Chemist'),
+(1005, 'Genetics', 'Bio Publishers', 'Charlie Biologist');
+
+-- Inserting into BOOKADOP table
+INSERT INTO BOOKADOP (CID, SEM, BOOKISBN) VALUES
+(101, 1, 1001),
+(102, 2, 1002),
+(103, 1, 1003),
+(104, 2, 1004),
+(105, 1, 1005);
+
+1)
+INSERT INTO TEXT VALUES(1006,"legend","kiran","KIRAN");
+INSERT INTO BOOKADOP VALUES (101,5,1006);
+
+2)
+SELECT C.CID,T.BOOKISBN,T.TITLE FROM COURSE C,BOOKADOP BA, TEXT T WHERE C.CID=BA.CID AND
+BA.BOOKISBN=T.BOOKISBN AND C.DEPT="Computer Science" AND 2<( SELECT COUNT(BOOKISBN) FROM BOOKADOP B WHERE C.CID=B.CID) ORDER BY T.TITLE;
+
+
+3)
+SELECT DISTINCT c.dept
+     FROM Course c
+     WHERE c.dept IN
+     ( SELECT c.dept
+     FROM Course c,BookAdop b,Text t
+     WHERE c.cid=b.cid
+     AND t.bookIsbn=b.bookIsbn
+     AND t.publisher='tech books')
+     AND c.dept NOT IN
+     ( SELECT c.dept
+     FROM Course c, BookAdoption b, TextBook t
+     WHERE c.cid=b.cid
+     AND t.bookIsbn=b.bookIsbn
+     AND t.publisher!='tech books');
+
+
+4)
+SELECT name from STUDENT s, ENROLL e, COURSE c
+WHERE s.REGNO=e.REGNO and e.CID=c.CID and c.CNAME="DBMS" and e.MARKS in (SELECT MAX(MARKS) from ENROLL e1, COURSE c1 where c1.CNAME="DBMS" and c1.CID=e1.CID);
+
+5)
+CREATE VIEW COBS AS (SELECT S.NAME, C.CID, E.MARKS FROM STUDENT S, COURSE C, ENROLL E WHERE S.REGNO=E.REGNO AND E.CID=C.CID);
+
+6)
+DELIMITER //
+mysql> CREATE TRIGGER ENROLLMENTCUTOFF
+    -> BEFORE INSERT ON ENROLL
+    -> FOR EACH ROW
+    -> BEGIN
+    -> IF NEW.MARKS<40 THEN
+    -> SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT="CUTOFF NOT MET";
+    -> END IF;
+    -> END //
+
+
+
+
+
+
+
+
+
+
+
+
